@@ -1,0 +1,31 @@
+{
+  "issue_id": 12345,
+  "started_at": "2025-12-19T16:54:40Z",
+  "last_updated": "2025-12-19T16:54:40Z",
+  "status": "initializing",
+  "branch": "",
+  "requirements": {
+    "primary": ,
+    "acceptance_criteria": []
+  },
+  "technical_context": {
+    "root_cause": "",
+    "affected_files": [],
+    "dependencies": [],
+    "architecture_decision": ""
+  },
+  "progress": {
+    "completed": [],
+    "in_progress": [],
+    "blocked": []
+  },
+  "confidence_scores": {
+    "fix_correctness": 0.5,
+    "test_coverage": 0.5,
+    "performance_impact": 0.5
+  },
+  "test_iterations": [],
+  "similar_tasks": [],
+  "human_interactions": [],
+  "mcp_resources_accessed": []
+}

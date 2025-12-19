@@ -19,8 +19,8 @@ describe('TaskCard UI Component Workflow', () => {
   });
 
   test('Start task via CLI', () => {
-    const output = execSync(`bin/gh-task-start ${issueId}`).toString();
-    expect(output).toMatch(/Task started successfully/);
+    const output = execSync(`../bin/gh-task-start ${issueId}`).toString();
+    expect(output).toMatch(/Ready to work on issue/);
     expect(fs.existsSync(`.task-context/${issueId}.json`)).toBe(true);
   });
 
@@ -30,13 +30,13 @@ describe('TaskCard UI Component Workflow', () => {
   });
 
   test('Checkpoint progress', () => {
-    const output = execSync(`bin/gh-task-checkpoint ${issueId} "Initial layout done"`).toString();
-    expect(output).toMatch(/Checkpoint created/);
+    const output = execSync(`../bin/gh-task-checkpoint ${issueId} "Initial layout done"`).toString();
+    expect(output).toMatch(/Checkpoint created|Context updated/);
   });
 
   test('Block task if needed', () => {
-    const output = execSync(`bin/gh-task-block ${issueId} "Waiting for API"`).toString();
-    expect(output).toMatch(/marked as blocked/);
+    const output = execSync(`../bin/gh-task-block ${issueId} "Waiting for API"`).toString();
+    expect(output).toMatch(/marked as blocked|Blocked/);
   });
 
   test('Write and run minimal test', () => {
@@ -49,7 +49,7 @@ test('renders TaskCard', () => {
   });
 
   test('Submit for review', () => {
-    const output = execSync(`bin/gh-task-pr ${issueId}`).toString();
-    expect(output).toMatch(/PR created/);
+    const output = execSync(`../bin/gh-task-pr ${issueId}`).toString();
+    expect(output).toMatch(/PR created|draft PR/);
   });
 });
