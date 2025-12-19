@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import PersonalTaskForm from '../components/PersonalTaskForm'
+import TaskList from '../components/TaskList'
 
 export default function PersonalTasks() {
   const [tasks, setTasks] = useState([])
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const fetchTasks = async () => {
     setError('')
+    setLoading(true)
     try {
       const res = await fetch('/api/personal-tasks')
       const data = await res.json()
@@ -14,6 +17,8 @@ export default function PersonalTasks() {
       else setError(data.error || 'Failed to load tasks')
     } catch (err) {
       setError('Error: ' + err.message)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -41,13 +46,8 @@ export default function PersonalTasks() {
   return (
     <div style={{padding:20}}>
       <h2>Personal Tasks</h2>
-      {error && <div style={{color:'red'}}>{error}</div>}
       <PersonalTaskForm onSave={handleSave} />
-      <ul>
-        {tasks.map(t => (
-          <li key={t.id}><strong>{t.title}</strong> ({t.status})</li>
-        ))}
-      </ul>
+      <TaskList tasks={tasks} loading={loading} error={error} />
     </div>
   )
 }
