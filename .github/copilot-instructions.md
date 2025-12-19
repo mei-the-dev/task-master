@@ -46,15 +46,15 @@
 	Prompt user for debug mode, launch only if confirmed.
 	 -->
 
-- [x] Ensure Documentation is Complete
 	<!--
 	Verify that all previous steps have been completed.
 	Verify that README.md and the copilot-instructions.md file in the .github directory exists and contains current project information.
 	Clean up the copilot-instructions.md file in the .github directory by removing all HTML comments.
 	 -->
-
-- Work through each checklist item systematically.
-- Keep communication concise and focused.
+ - Enforce modular boundaries: CLI and MCP server logic must be in bin/ and mcp/ only.
+ - No stubs/mocks in production code. All commands must be operational.
+ - UI, API, and server code must be tracked as tasks/issues.
+ - Reference workflow for UI component development is in README.md.
 - Follow development best practices.
 
 References:

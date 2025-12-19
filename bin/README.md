@@ -1,0 +1,1 @@
+CLI scripts for MCP/Task-Master. All scripts must be operational. No stubs or mocks allowed.

@@ -19,105 +19,27 @@ import {
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { exec } from "child_process";
-import { promisify } from "util";
-import fs from "fs/promises";
-import path from "path";
 
-const execAsync = promisify(exec);
+import { execCommand } from "./mcp/utils/exec.js";
+import { ghCommand } from "./mcp/utils/ghCommand.js";
+import { readContext, writeContext } from "./mcp/context.js";
+import { listContexts } from "./mcp/utils/listContexts.js";
+import { readDoc } from "./mcp/utils/readDoc.js";
 
-// Configuration
-const CONTEXT_DIR = process.env.GH_TASK_CONTEXT_DIR || ".task-context";
-const PROJECT_NUMBER = process.env.GH_PROJECT_NUMBER || "1";
-
-/**
- * Execute a shell command and return parsed output
- */
-async function execCommand(command) {
-  try {
-    // Ensure project-local ./bin is available to spawned commands
-    const env = { ...process.env };
-    const localBin = path.resolve(process.cwd(), "bin");
-    if (env.PATH && !env.PATH.includes(localBin)) {
-      env.PATH = `${localBin}:${env.PATH}`;
-    } else if (!env.PATH) {
-      env.PATH = localBin;
-    }
-
-    const { stdout, stderr } = await execAsync(command, { env, maxBuffer: 10 * 1024 * 1024 });
-
-    // Don't throw on stderr if it contains informational messages
-    if (stderr && !stdout && !stderr.includes("Switched to") && !stderr.includes("Created branch")) {
-      throw new Error(stderr);
-    }
-
-    return stdout.trim();
-  } catch (error) {
-    throw new Error(`Command failed: ${error.message}`);
-  }
-}
-
-/**
- * Execute gh CLI command and parse JSON output
- */
-async function ghCommand(args) {
-  const output = await execCommand(`gh ${args}`);
-  try {
-    return JSON.parse(output);
-  } catch {
-    return output;
-  }
-}
-
-/**
- * Read task context from JSON file
- */
-async function readContext(issueId) {
-  const contextPath = path.join(CONTEXT_DIR, `${issueId}.json`);
-  try {
-    const content = await fs.readFile(contextPath, "utf-8");
-    return JSON.parse(content);
-  } catch (error) {
-    return null;
-  }
-}
-
-/**
- * Write task context to JSON file
- */
-async function writeContext(issueId, context) {
-  await fs.mkdir(CONTEXT_DIR, { recursive: true });
-  const contextPath = path.join(CONTEXT_DIR, `${issueId}.json`);
-  await fs.writeFile(contextPath, JSON.stringify(context, null, 2));
-}
-
-/**
- * List all context files
- */
-async function listContexts() {
-  try {
-    await fs.mkdir(CONTEXT_DIR, { recursive: true });
-    const files = await fs.readdir(CONTEXT_DIR);
-    return files
-      .filter((f) => f.endsWith(".json") && !f.includes("completed"))
-      .map((f) => parseInt(f.replace(".json", "")))
-      .filter((n) => !isNaN(n));
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Read documentation file
- */
-async function readDoc(issueId, docPath) {
-  const fullPath = path.join(CONTEXT_DIR, issueId, "docs", docPath);
-  try {
-    return await fs.readFile(fullPath, "utf-8");
-  } catch (error) {
-    throw new Error(`Documentation not found: ${docPath}`);
-  }
-}
+import { analyzeIssue } from "./mcp/tools/analyzeIssue.js";
+import { startTask } from "./mcp/tools/startTask.js";
+import { getContext } from "./mcp/tools/getContext.js";
+import { updateContext } from "./mcp/tools/updateContext.js";
+import { runTests } from "./mcp/tools/runTests.js";
+import { createCheckpoint } from "./mcp/tools/createCheckpoint.js";
+import { requestPartialReview } from "./mcp/tools/requestPartialReview.js";
+import { submitForReview } from "./mcp/tools/submitForReview.js";
+import { blockTask } from "./mcp/tools/blockTask.js";
+import { findSimilarTasks } from "./mcp/tools/findSimilarTasks.js";
+import { fetchDocumentation } from "./mcp/tools/fetchDocumentation.js";
+import { getIssueDetails } from "./mcp/tools/getIssueDetails.js";
+import { listActiveTasks } from "./mcp/tools/listActiveTasks.js";
+import { getPerformanceStats } from "./mcp/tools/getPerformanceStats.js";
 
 /**
  * Main MCP Server
@@ -564,360 +486,59 @@ class TaskMasterServer {
   // Tool implementations
 
   async analyzeIssue(issueId) {
-    // Get issue details
-    const issue = await ghCommand(`issue view ${issueId} --json title,body,labels`);
-    
-    // Analyze completeness
-    const title = issue.title || "";
-    const body = issue.body || "";
-    const labels = issue.labels || [];
-    
-    const analysis = {
-      issue_id: issueId,
-      completeness: {
-        title_descriptive: title.length > 10 && title.includes(" "),
-        has_description: body.length > 50,
-        has_acceptance_criteria: body.toLowerCase().includes("acceptance criteria") || body.includes("AC:") || body.includes("✅"),
-        has_labels: labels.length > 0,
-        has_assignee: issue.assignees && issue.assignees.length > 0,
-      },
-      similar_tasks: [],
-      documentation_found: [],
-      confidence: "HIGH",
-      recommendations: [],
-    };
-    
-    // Determine confidence based on completeness
-    const completeCount = Object.values(analysis.completeness).filter(Boolean).length;
-    if (completeCount < 3) {
-      analysis.confidence = "LOW";
-    } else if (completeCount < 5) {
-      analysis.confidence = "MEDIUM";
-    }
-    
-    // Add recommendations
-    if (!analysis.completeness.title_descriptive) {
-      analysis.recommendations.push("Make title more descriptive (aim for 10+ words)");
-    }
-    if (!analysis.completeness.has_description) {
-      analysis.recommendations.push("Add detailed description explaining the requirements");
-    }
-    if (!analysis.completeness.has_acceptance_criteria) {
-      analysis.recommendations.push("Include acceptance criteria or success metrics");
-    }
-    if (!analysis.completeness.has_labels) {
-      analysis.recommendations.push("Apply relevant labels (enhancement, bug, documentation, etc.)");
-    }
-    
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(analysis, null, 2),
-        },
-      ],
-    };
+    return await analyzeIssue(issueId);
   }
 
   async startTask(issueId) {
-    let issue;
-    // Try to get issue details, create if not found
-    try {
-      issue = await ghCommand(`issue view ${issueId} --json title,number`);
-    } catch (e) {
-      // Issue does not exist, create it
-      const title = `Task #${issueId}: (auto-generated)`;
-      const body = `Auto-generated issue for MCP task ${issueId}.`;
-      const createOut = await execCommand(`gh issue create --title "${title}" --body "${body}"`);
-      // Extract new issue number from output (URL or number)
-      const match = createOut.match(/\/issues\/(\d+)/);
-      if (match) {
-        issueId = parseInt(match[1], 10);
-        issue = await ghCommand(`issue view ${issueId} --json title,number`);
-      } else {
-        throw new Error(`Failed to create or find issue for start_task: ${createOut}`);
-      }
-    }
-
-    // Create branch name
-    const branchName = `task-${issueId}-${issue.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 50)}`;
-
-    // Check if branch exists
-    let branchExists = false;
-    try {
-      await execCommand(`git show-ref --verify --quiet refs/heads/${branchName}`);
-      branchExists = true;
-    } catch {
-      // Branch doesn't exist
-    }
-
-    // Create or switch to branch
-    if (branchExists) {
-      await execCommand(`git checkout ${branchName}`);
-    } else {
-      await execCommand(`git checkout -b ${branchName}`);
-    }
-
-    // Initialize context
-    const context = {
-      issue_id: issueId,
-      started_at: new Date().toISOString(),
-      last_updated: new Date().toISOString(),
-      status: "in_progress",
-      branch: branchName,
-      requirements: {
-        primary: issue.title,
-        acceptance_criteria: []
-      },
-      technical_context: {
-        root_cause: "",
-        affected_files: [],
-        dependencies: []
-      },
-      progress: {
-        completed_steps: [],
-        current_step: "Analysis",
-        blockers: [],
-        confidence: 0.8
-      },
-      testing: {
-        test_cases: [],
-        coverage_target: 0.8,
-        performance_requirements: []
-      },
-      documentation: {
-        api_docs: [],
-        user_docs: [],
-        architecture_decisions: []
-      }
-    };
-
-    await writeContext(issueId, context);
-
-    // Automatically run CLI context init for compatibility
-    try {
-      await execCommand(`source ./gh_cli_aliases\\ \(1\\).sh && gh-task-context-init ${issueId}`);
-    } catch (e) {
-      // Log but do not fail task if init fails
-      console.error(`[MCP] Warning: CLI context init failed for issue #${issueId}:`, e.message);
-    }
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Task started successfully!\n\nBranch: ${branchName}\nStatus: in_progress\nContext: .task-context/${issueId}.json`,
-        },
-      ],
-    };
+    return await startTask(issueId);
   }
 
   async getContext(issueId) {
-    const context = await readContext(issueId);
-    if (!context) {
-      throw new Error(`No context found for issue #${issueId}`);
-    }
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(context, null, 2),
-        },
-      ],
-    };
+    return await getContext(issueId);
   }
 
   async updateContext(issueId, updates) {
-    let context = await readContext(issueId);
-    if (!context) {
-      throw new Error(`No context found for issue #${issueId}`);
-    }
-
-    // Deep merge updates
-    context = { ...context, ...updates };
-    context.last_updated = new Date().toISOString();
-
-    await writeContext(issueId, context);
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Context updated for issue #${issueId}`,
-        },
-      ],
-    };
+    return await updateContext(issueId, updates);
   }
 
   async runTests(issueId) {
-    const output = await execCommand(`gh-task-test ${issueId} 2>&1 || true`);
-    
-    const passed = output.includes("✅ All tests passing");
-    const iteration = output.match(/Test Iteration #(\d+)/)?.[1] || "1";
-    
-    let pattern = "unknown";
-    if (output.includes("Race condition")) pattern = "race_condition";
-    if (output.includes("timing issue")) pattern = "timing_issue";
-    if (output.includes("Cannot find module")) pattern = "missing_import";
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            passed,
-            iteration: parseInt(iteration),
-            pattern_detected: pattern,
-            output: output.substring(0, 1000), // Limit output size
-          }, null, 2),
-        },
-      ],
-    };
+    return await runTests(issueId);
   }
 
   async createCheckpoint(issueId, message) {
-    await execCommand(`gh-task-checkpoint ${issueId} "${message}"`);
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Checkpoint created for issue #${issueId}: ${message}`,
-        },
-      ],
-    };
+    return await createCheckpoint(issueId, message);
   }
 
   async requestPartialReview(issueId, aspect) {
-    await execCommand(`gh-task-review-partial ${issueId} ${aspect}`);
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Partial review requested for ${aspect} on issue #${issueId}`,
-        },
-      ],
-    };
+    return await requestPartialReview(issueId, aspect);
   }
 
   async submitForReview(issueId) {
-    // Run review and PR creation
-    await execCommand(`gh-task-review ${issueId}`);
-    let prUrl = "";
-    try {
-      prUrl = (await execCommand(`gh-task-pr`)).split($'\n')[0];
-    } catch (e) {
-      prUrl = "";
-    }
-    // Update context with PR URL and status
-    let context = await readContext(issueId);
-    if (prUrl) {
-      context = { ...context, pr_url: prUrl, status: "review" };
-      await writeContext(issueId, context);
-    }
-    return {
-      content: [
-        {
-          type: "text",
-          text: `PR created for issue #${issueId}${prUrl ? `\nPR: ${prUrl}` : ""}\nConfidence scores:\n${JSON.stringify(context.confidence_scores, null, 2)}`,
-        },
-      ],
-    };
+    return await submitForReview(issueId);
   }
 
   async blockTask(issueId, blocker, context) {
-    const contextStr = context ? JSON.stringify(context) : "";
-    await execCommand(`gh-task-block ${issueId} "${blocker}" --context`);
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Task #${issueId} marked as blocked: ${blocker}`,
-        },
-      ],
-    };
+    return await blockTask(issueId, blocker, context);
   }
 
   async findSimilarTasks(issueId) {
-    const output = await execCommand(`gh-task-similar ${issueId}`);
-    
-    return {
-      content: [
-        {
-          type: "text",
-          text: output,
-        },
-      ],
-    };
+    return await findSimilarTasks(issueId);
   }
 
   async fetchDocumentation(issueId) {
-    const output = await execCommand(`gh-task-docs ${issueId}`);
-    
-    return {
-      content: [
-        {
-          type: "text",
-          text: output,
-        },
-      ],
-    };
+    return await fetchDocumentation(issueId);
   }
 
   async getIssueDetails(issueId) {
-    const issue = await ghCommand(`issue view ${issueId} --json title,body,labels,state,assignees,milestone`);
-    
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(issue, null, 2),
-        },
-      ],
-    };
+    return await getIssueDetails(issueId);
   }
 
   async listActiveTasks(status) {
-    const contexts = await listContexts();
-    const tasks = [];
-
-    for (const issueId of contexts) {
-      const context = await readContext(issueId);
-      if (status === "all" || context.status === status) {
-        tasks.push({
-          issue_id: issueId,
-          status: context.status,
-          branch: context.branch,
-          confidence: context.confidence_scores,
-          started: context.started_at,
-        });
-      }
-    }
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(tasks, null, 2),
-        },
-      ],
-    };
+    return await listActiveTasks(status);
   }
 
   async getPerformanceStats() {
-    const output = await execCommand(`gh-task-stats`);
-    
-    return {
-      content: [
-        {
-          type: "text",
-          text: output,
-        },
-      ],
-    };
+    return await getPerformanceStats();
   }
 
   async run() {

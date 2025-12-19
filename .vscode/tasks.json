@@ -8,8 +8,7 @@
 			"args": [
 				"start"
 			],
-			"isBackground": true,
-			"group": "build"
+			"isBackground": true
 		}
 	]
 }

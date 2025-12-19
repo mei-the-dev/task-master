@@ -1,3 +1,40 @@
+# Task-Master Reference Workflow
+
+## UI Component Development Example
+
+### 1. Create a GitHub Issue
+- Title: `UI: Implement TaskCard component`
+- Description: Requirements, acceptance criteria, design notes.
+
+### 2. Start Task via CLI
+- Run: `bin/gh-task-start <issue_id>`
+- This creates a branch and initializes context.
+
+### 3. Develop Component
+- Implement in `ui/components/TaskCard.js`.
+- Use only operational MCP/CLI commands for context, status, and PR.
+
+### 4. Track Progress
+- Run: `bin/gh-task-checkpoint <issue_id> "Initial layout done"`
+- Run: `bin/gh-task-block <issue_id> "Waiting for API"` if blocked.
+
+### 5. Testing
+- Write minimal, real tests in `ui/components/TaskCard.test.js`.
+- Avoid excessive scaffolding; focus on actual logic.
+
+### 6. Submit for Review
+- Run: `bin/gh-task-pr <issue_id>`
+- MCP server updates context and creates PR.
+
+### 7. Merge and Document
+- On PR merge, MCP server archives context and learnings.
+
+---
+
+## Enforcement Principles
+- No stubs/mocks in CLI or MCP server. All commands must execute real logic.
+- Modular boundaries: CLI logic in `bin/`, MCP server logic in `mcp/`, UI in `ui/`.
+- No test-driven spirals: Write only essential tests, focus on real code and operational flows.
 # Task-Master MCP Server
 
 Model Context Protocol server for the GitHub-Native Agentic Framework. Provides AI agents with structured access to GitHub issues, project boards, task contexts, and learning data.

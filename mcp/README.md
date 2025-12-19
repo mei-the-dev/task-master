@@ -1,0 +1,1 @@
+MCP server logic and tools. No stubs or mocks. All modules must be operational and modular.
