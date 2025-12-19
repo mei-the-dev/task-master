@@ -1,14 +1,26 @@
-import Dashboard from '../components/Dashboard'
 
-// Mock data for now
-const mockTasks = [
-  { id: 1, title: 'Design new dashboard layout', status: 'pending', due_date: new Date().toISOString(), tags: ['design'] },
-  { id: 2, title: 'Review calendar integration', status: 'in_progress', due_date: new Date().toISOString(), tags: ['calendar'] },
-  { id: 3, title: 'Morning standup', status: 'completed', due_date: new Date().toISOString(), tags: ['meeting'] }
-]
-const mockEvents = []
-const mockAnalytics = {}
+import React from 'react';
+import Dashboard from '../components/Dashboard';
 
 export default function PersonalDashboard() {
-  return <Dashboard tasks={mockTasks} events={mockEvents} analytics={mockAnalytics} />
+  const [tasks, setTasks] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+
+  React.useEffect(() => {
+    setLoading(true);
+    fetch('/api/personal-tasks')
+      .then(res => res.json())
+      .then(data => {
+        setTasks(data.tasks || []);
+        setLoading(false);
+      })
+      .catch(e => {
+        setError(e.message || 'Failed to load tasks');
+        setLoading(false);
+      });
+  }, []);
+
+  // TODO: fetch real events/analytics if needed
+  return <Dashboard tasks={tasks} events={[]} analytics={{}} loading={loading} error={error} />;
 }

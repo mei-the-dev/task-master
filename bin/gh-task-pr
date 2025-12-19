@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# gh-task-pr: Create PR for current task branch and sync status
+
+set -e
+
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "Not in a git repository" >&2
+  exit 1
+fi
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+issue_id=""
+if [[ $branch =~ task-([0-9]+)- ]]; then
+  issue_id="${BASH_REMATCH[1]}"
+else
+  echo "Branch name must be task-<issue_id>-..." >&2
+  exit 1
+fi
+
+# Push branch
+if ! git push -u origin "$branch"; then
+  echo "Failed to push branch $branch" >&2
+  exit 1
+fi
+
+# Create PR if not exists
+pr_url=$(gh pr view "$branch" --json url -q .url 2>/dev/null || true)
+if [ -z "$pr_url" ]; then
+  pr_url=$(gh pr create --fill --head "$branch" --label "in progress" --title "Task $issue_id" --body "Automated PR for task $issue_id" --web=false | grep -Eo 'https://github.com/[^ ]+')
+  echo "Created PR: $pr_url"
+else
+  echo "PR already exists: $pr_url"
+fi
+
+# Update project board status to Review (if possible)
+if command -v gh-task-status >/dev/null 2>&1; then
+  gh-task-status "$issue_id" review
+fi
+
+# Output PR URL for MCP-server
+if [ -n "$pr_url" ]; then
+  echo "$pr_url"
+fi

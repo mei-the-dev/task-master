@@ -30,11 +30,21 @@
   "mcp": {
     "server": {
       "command": "node",
-      "args": ["index.js"],
+      "args": [
+        "index.js"
+      ],
       "env": {
         "GH_TASK_CONTEXT_DIR": ".task-context",
         "GH_PROJECT_NUMBER": "1"
       }
     }
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.28.5",
+    "@babel/preset-react": "^7.28.5",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
+    "babel-jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0"
   }
 }

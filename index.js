@@ -803,14 +803,25 @@ class TaskMasterServer {
   }
 
   async submitForReview(issueId) {
+    // Run review and PR creation
     await execCommand(`gh-task-review ${issueId}`);
-    const context = await readContext(issueId);
-
+    let prUrl = "";
+    try {
+      prUrl = (await execCommand(`gh-task-pr`)).split($'\n')[0];
+    } catch (e) {
+      prUrl = "";
+    }
+    // Update context with PR URL and status
+    let context = await readContext(issueId);
+    if (prUrl) {
+      context = { ...context, pr_url: prUrl, status: "review" };
+      await writeContext(issueId, context);
+    }
     return {
       content: [
         {
           type: "text",
-          text: `PR created for issue #${issueId}\nConfidence scores:\n${JSON.stringify(context.confidence_scores, null, 2)}`,
+          text: `PR created for issue #${issueId}${prUrl ? `\nPR: ${prUrl}` : ""}\nConfidence scores:\n${JSON.stringify(context.confidence_scores, null, 2)}`,
         },
       ],
     };
