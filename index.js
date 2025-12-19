@@ -35,11 +35,22 @@ const PROJECT_NUMBER = process.env.GH_PROJECT_NUMBER || "1";
  */
 async function execCommand(command) {
   try {
-    const { stdout, stderr } = await execAsync(command);
+    // Ensure project-local ./bin is available to spawned commands
+    const env = { ...process.env };
+    const localBin = path.resolve(process.cwd(), "bin");
+    if (env.PATH && !env.PATH.includes(localBin)) {
+      env.PATH = `${localBin}:${env.PATH}`;
+    } else if (!env.PATH) {
+      env.PATH = localBin;
+    }
+
+    const { stdout, stderr } = await execAsync(command, { env, maxBuffer: 10 * 1024 * 1024 });
+
     // Don't throw on stderr if it contains informational messages
     if (stderr && !stdout && !stderr.includes("Switched to") && !stderr.includes("Created branch")) {
       throw new Error(stderr);
     }
+
     return stdout.trim();
   } catch (error) {
     throw new Error(`Command failed: ${error.message}`);

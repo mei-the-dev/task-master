@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "id": { "type": "integer" },
+    "task_id": { "type": "integer" },
+    "author": { "type": "string" },
+    "content": { "type": "string", "minLength": 1, "maxLength": 1000 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "parent_id": { "type": ["integer", "null"] },
+    "reactions": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } }
+  },
+  "required": ["id", "task_id", "author", "content", "created_at"]
+}

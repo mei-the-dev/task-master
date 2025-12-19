@@ -174,10 +174,12 @@ gh-task-analyze() {
         local missing_deps=""
         
         for pkg in $mentioned_packages; do
-            if echo "$issue_body" | grep -qi "$pkg" && \
-               ! jq -e ".dependencies.\"$pkg\" // .devDependencies.\"$pkg\"" package.json >/dev/null 2>&1; then
-                if [ "$pkg" != "the" ] && [ "$pkg" != "and" ] && [ "$pkg" != "for" ]; then
-                    missing_deps="$missing_deps $pkg"
+            # sanitize to avoid leading hyphens causing grep to interpret as options
+            local pkg_sanitized="${pkg#-}"
+            if echo "$issue_body" | grep -qi -- "$pkg_sanitized" && \
+               ! jq -e ".dependencies.\"$pkg_sanitized\" // .devDependencies.\"$pkg_sanitized\"" package.json >/dev/null 2>&1; then
+                if [ "$pkg_sanitized" != "the" ] && [ "$pkg_sanitized" != "and" ] && [ "$pkg_sanitized" != "for" ]; then
+                    missing_deps="$missing_deps $pkg_sanitized"
                 fi
             fi
         done
@@ -217,19 +219,47 @@ gh-task-analyze() {
         local doc_files=$(find docs -name "*.md" -type f 2>/dev/null)
         
         for keyword in $keywords; do
-            local matching_docs=$(echo "$doc_files" | xargs grep -l -i "$keyword" 2>/dev/null || true)
+            # Find matching docs in a portable way (avoid xargs grep parsing issues)
+            local matching_docs=""
+            for doc in $doc_files; do
+                [ -z "$doc" ] && continue
+                if grep -qi -- "$keyword" "$doc" 2>/dev/null; then
+                    matching_docs="$matching_docs $doc"
+                fi
+            done
+
             if [ -n "$matching_docs" ]; then
                 for doc in $matching_docs; do
-                    local mod_time=$(stat -f "%Sm" -t "%Y-%m-%d" "$doc" 2>/dev/null || stat -c "%y" "$doc" 2>/dev/null | cut -d' ' -f1)
-                    local age_days=$(( ($(date +%s) - $(date -j -f "%Y-%m-%d" "$mod_time" +%s 2>/dev/null || date -d "$mod_time" +%s)) / 86400 ))
-                    
-                    if [ $age_days -lt 90 ]; then
-                        echo "  ✓ $doc (updated recently)"
-                    elif [ $age_days -lt 180 ]; then
-                        echo "  ⚠ $doc (updated $age_days days ago)"
-                    else
-                        echo "  ⚠ $doc (updated $age_days days ago - may be stale)"
+                    # Determine modification date in a portable way
+                    local mod_time=""
+                    if git ls-files --error-unmatch "$doc" >/dev/null 2>&1; then
+                        mod_time=$(git log -1 --format=%ci -- "$doc" 2>/dev/null | cut -d' ' -f1)
                     fi
+                    if [ -z "$mod_time" ]; then
+                        # Try GNU stat then BSD stat
+                        mod_time=$(stat -c "%y" "$doc" 2>/dev/null | cut -d' ' -f1 || true)
+                        if [ -z "$mod_time" ]; then
+                            mod_time=$(stat -f "%Sm" -t "%Y-%m-%d" "$doc" 2>/dev/null || true)
+                        fi
+                    fi
+
+                    # Fallback if still empty
+                    if [ -z "$mod_time" ]; then
+                        echo "  ✓ $doc (mod date unknown)"
+                    else
+                        # Parse mod_time to epoch portably using date -d (GNU) or date -j (BSD)
+                        local mod_ts=$(date -d "$mod_time" +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$mod_time" +%s 2>/dev/null || echo 0)
+                        local age_days=$(( ( $(date +%s) - mod_ts ) / 86400 ))
+
+                        if [ $age_days -lt 90 ]; then
+                            echo "  ✓ $doc (updated recently)"
+                        elif [ $age_days -lt 180 ]; then
+                            echo "  ⚠ $doc (updated $age_days days ago)"
+                        else
+                            echo "  ⚠ $doc (updated $age_days days ago - may be stale)"
+                        fi
+                    fi
+
                     docs_found=$((docs_found + 1))
                 done
             fi

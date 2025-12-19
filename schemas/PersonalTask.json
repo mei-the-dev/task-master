@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "id": { "type": "integer" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "maxLength": 2000 },
+    "status": { "type": "string", "enum": ["pending", "in_progress", "completed", "overdue", "archived"] },
+    "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "notes": { "type": "string", "maxLength": 4000 },
+    "due_date": { "type": ["string", "null"], "format": "date-time" },
+    "recurrence": { "type": ["string", "null"], "description": "e.g. daily, weekly, monthly" },
+    "reminders": { "type": "array", "items": { "type": "string", "format": "date-time" } },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "completed_at": { "type": ["string", "null"], "format": "date-time" },
+    "owner": { "type": "string" },
+    "shared_with": { "type": "array", "items": { "type": "string" } },
+    "integration_ids": { "type": "object", "additionalProperties": { "type": "string" } }
+  },
+  "required": ["id", "title", "status", "created_at", "updated_at", "owner"]
+}

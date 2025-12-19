@@ -1,0 +1,42 @@
+<svg width="700" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Header -->
+  <rect x="0" y="0" width="700" height="60" fill="#f8f9fa" stroke="#ccc"/>
+  <text x="30" y="40" font-family="Arial" font-size="24" fill="#333">Create/Edit Task</text>
+  
+  <!-- Form -->
+  <rect x="30" y="80" width="640" height="480" fill="#fff" stroke="#ccc"/>
+  
+  <!-- Title -->
+  <text x="50" y="120" font-family="Arial" font-size="16" fill="#333">Title:</text>
+  <rect x="150" y="100" width="500" height="30" fill="#f9f9f9" stroke="#ddd"/>
+  
+  <!-- Due Date -->
+  <text x="50" y="170" font-family="Arial" font-size="16" fill="#333">Due Date:</text>
+  <rect x="150" y="150" width="200" height="30" fill="#f9f9f9" stroke="#ddd"/>
+  
+  <!-- Priority -->
+  <text x="400" y="170" font-family="Arial" font-size="16" fill="#333">Priority:</text>
+  <rect x="500" y="150" width="150" height="30" fill="#f9f9f9" stroke="#ddd"/>
+  
+  <!-- Tags -->
+  <text x="50" y="220" font-family="Arial" font-size="16" fill="#333">Tags:</text>
+  <rect x="150" y="200" width="500" height="30" fill="#f9f9f9" stroke="#ddd"/>
+  
+  <!-- Notes -->
+  <text x="50" y="270" font-family="Arial" font-size="16" fill="#333">Notes:</text>
+  <rect x="150" y="250" width="500" height="80" fill="#f9f9f9" stroke="#ddd"/>
+  
+  <!-- Recurrence -->
+  <text x="50" y="360" font-family="Arial" font-size="16" fill="#333">Recurrence:</text>
+  <rect x="150" y="340" width="200" height="30" fill="#f9f9f9" stroke="#ddd"/>
+  
+  <!-- Reminders -->
+  <text x="400" y="360" font-family="Arial" font-size="16" fill="#333">Reminders:</text>
+  <rect x="500" y="340" width="150" height="30" fill="#f9f9f9" stroke="#ddd"/>
+  
+  <!-- Buttons -->
+  <rect x="400" y="420" width="100" height="40" fill="#6c757d" stroke="#545b62"/>
+  <text x="425" y="445" font-family="Arial" font-size="16" fill="#fff">Cancel</text>
+  <rect x="530" y="420" width="100" height="40" fill="#007bff" stroke="#0056b3"/>
+  <text x="555" y="445" font-family="Arial" font-size="16" fill="#fff">Save</text>
+</svg>

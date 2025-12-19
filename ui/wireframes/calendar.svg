@@ -1,0 +1,21 @@
+<svg width="900" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Header -->
+  <rect x="0" y="0" width="900" height="60" fill="#f8f9fa" stroke="#ccc"/>
+  <text x="30" y="40" font-family="Arial" font-size="24" fill="#333">Calendar View</text>
+  
+  <!-- Calendar Grid -->
+  <rect x="30" y="80" width="840" height="480" fill="#fff" stroke="#ccc"/>
+  <text x="50" y="110" font-family="Arial" font-size="16" fill="#333">[Month/Week grid with tasks/events]</text>
+  
+  <!-- Drag/Drop Task -->
+  <rect x="100" y="200" width="120" height="40" fill="#e9ecef" stroke="#007bff"/>
+  <text x="110" y="225" font-family="Arial" font-size="14" fill="#007bff">Design Review</text>
+  <rect x="300" y="300" width="120" height="40" fill="#e9ecef" stroke="#28a745"/>
+  <text x="310" y="325" font-family="Arial" font-size="14" fill="#28a745">Sprint Planning</text>
+  <rect x="600" y="400" width="120" height="40" fill="#e9ecef" stroke="#dc3545"/>
+  <text x="610" y="425" font-family="Arial" font-size="14" fill="#dc3545">1:1 Meeting</text>
+  
+  <!-- Navigation -->
+  <rect x="700" y="20" width="150" height="30" fill="#007bff" stroke="#0056b3"/>
+  <text x="730" y="40" font-family="Arial" font-size="16" fill="#fff">Today</text>
+</svg>

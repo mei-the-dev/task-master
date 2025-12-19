@@ -1,0 +1,39 @@
+<svg width="1200" height="800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Header -->
+  <rect x="0" y="0" width="1200" height="70" fill="#f8f9fa" stroke="#ccc"/>
+  <text x="40" y="45" font-family="Arial" font-size="28" fill="#333">Personal Organizer Dashboard</text>
+  
+  <!-- Sidebar -->
+  <rect x="0" y="70" width="220" height="730" fill="#f4f4f4" stroke="#ccc"/>
+  <text x="40" y="110" font-family="Arial" font-size="18" fill="#007bff">Today</text>
+  <text x="40" y="150" font-family="Arial" font-size="18" fill="#333">Upcoming</text>
+  <text x="40" y="190" font-family="Arial" font-size="18" fill="#333">Calendar</text>
+  <text x="40" y="230" font-family="Arial" font-size="18" fill="#333">Analytics</text>
+  <text x="40" y="270" font-family="Arial" font-size="18" fill="#333">Settings</text>
+  
+  <!-- Main Content: Task List -->
+  <rect x="240" y="90" width="600" height="320" fill="#fff" stroke="#ccc"/>
+  <text x="260" y="120" font-family="Arial" font-size="20" fill="#333">Today's Tasks</text>
+  <rect x="260" y="140" width="560" height="50" fill="#e9ecef" stroke="#ddd"/>
+  <text x="280" y="170" font-family="Arial" font-size="16" fill="#333">[ ] Design new dashboard layout</text>
+  <rect x="260" y="200" width="560" height="50" fill="#e9ecef" stroke="#ddd"/>
+  <text x="280" y="230" font-family="Arial" font-size="16" fill="#333">[ ] Review calendar integration</text>
+  <rect x="260" y="260" width="560" height="50" fill="#e9ecef" stroke="#ddd"/>
+  <text x="280" y="290" font-family="Arial" font-size="16" fill="#333">[x] Morning standup</text>
+  
+  <!-- Calendar Widget -->
+  <rect x="880" y="90" width="300" height="320" fill="#fff" stroke="#ccc"/>
+  <text x="900" y="120" font-family="Arial" font-size="20" fill="#333">Calendar</text>
+  <rect x="900" y="140" width="260" height="250" fill="#f9f9f9" stroke="#ddd"/>
+  <text x="920" y="170" font-family="Arial" font-size="16" fill="#333">[Calendar grid here]</text>
+  
+  <!-- Analytics Widget -->
+  <rect x="240" y="430" width="940" height="180" fill="#fff" stroke="#ccc"/>
+  <text x="260" y="460" font-family="Arial" font-size="20" fill="#333">Productivity Analytics</text>
+  <rect x="260" y="480" width="900" height="100" fill="#f9f9f9" stroke="#ddd"/>
+  <text x="280" y="520" font-family="Arial" font-size="16" fill="#333">[Charts: Completed, Overdue, Streak]</text>
+  
+  <!-- Quick Add Task -->
+  <rect x="240" y="640" width="940" height="60" fill="#f8f9fa" stroke="#ccc"/>
+  <text x="260" y="680" font-family="Arial" font-size="18" fill="#007bff">+ Quick Add Task</text>
+</svg>

@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string",
+      "description": "GitHub username"
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Email address"
+    },
+    "avatar_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Avatar image URL"
+    },
+    "role": {
+      "type": "string",
+      "enum": ["admin", "developer", "reviewer", "user"],
+      "description": "User role in the system"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Account creation timestamp"
+    },
+    "last_active": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last activity timestamp"
+    }
+  },
+  "required": ["username", "created_at"]
+}
