@@ -620,12 +620,28 @@ class TaskMasterServer {
   }
 
   async startTask(issueId) {
-    // Get issue details
-    const issue = await ghCommand(`issue view ${issueId} --json title,number`);
-    
+    let issue;
+    // Try to get issue details, create if not found
+    try {
+      issue = await ghCommand(`issue view ${issueId} --json title,number`);
+    } catch (e) {
+      // Issue does not exist, create it
+      const title = `Task #${issueId}: (auto-generated)`;
+      const body = `Auto-generated issue for MCP task ${issueId}.`;
+      const createOut = await execCommand(`gh issue create --title "${title}" --body "${body}"`);
+      // Extract new issue number from output (URL or number)
+      const match = createOut.match(/\/issues\/(\d+)/);
+      if (match) {
+        issueId = parseInt(match[1], 10);
+        issue = await ghCommand(`issue view ${issueId} --json title,number`);
+      } else {
+        throw new Error(`Failed to create or find issue for start_task: ${createOut}`);
+      }
+    }
+
     // Create branch name
     const branchName = `task-${issueId}-${issue.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 50)}`;
-    
+
     // Check if branch exists
     let branchExists = false;
     try {
@@ -634,14 +650,14 @@ class TaskMasterServer {
     } catch {
       // Branch doesn't exist
     }
-    
+
     // Create or switch to branch
     if (branchExists) {
       await execCommand(`git checkout ${branchName}`);
     } else {
       await execCommand(`git checkout -b ${branchName}`);
     }
-    
+
     // Initialize context
     const context = {
       issue_id: issueId,
@@ -675,9 +691,9 @@ class TaskMasterServer {
         architecture_decisions: []
       }
     };
-    
+
     await writeContext(issueId, context);
-    
+
     return {
       content: [
         {
