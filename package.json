@@ -1,0 +1,40 @@
+{
+  "name": "@taskmaster/mcp-server",
+  "version": "2.0.0",
+  "description": "Model Context Protocol server for GitHub-Native Agentic Framework",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "task-master-mcp": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mcp",
+    "github",
+    "agent",
+    "task-management",
+    "ai"
+  ],
+  "author": "Task-Master Framework",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "mcp": {
+    "server": {
+      "command": "node",
+      "args": ["index.js"],
+      "env": {
+        "GH_TASK_CONTEXT_DIR": ".task-context",
+        "GH_PROJECT_NUMBER": "1"
+      }
+    }
+  }
+}

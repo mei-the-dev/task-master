@@ -1,0 +1,9 @@
+{
+    "chat.mcp.serverSampling": {
+        "task-master/.vscode/mcp.json: task-master": {
+            "allowedModels": [
+                "copilot/auto"
+            ]
+        }
+    }
+}

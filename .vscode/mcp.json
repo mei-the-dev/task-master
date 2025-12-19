@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "task-master": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["index.js"]
+    }
+  }
+}
