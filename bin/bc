@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Minimal bc shim using python for simple numeric comparisons used by scripts
+python - <<'PY'
+import sys
+expr = sys.stdin.read().strip()
+if not expr:
+    sys.exit(0)
+try:
+    # replace potential bc-style power operator if present
+    expr = expr.replace("^", "**")
+    result = eval(expr)
+    # bc -l prints 1 for true, 0 for false, other numeric results for expressions
+    if isinstance(result, bool):
+        print(int(result))
+    else:
+        # mimic bc: print float without trailing spaces
+        print(result)
+except Exception as e:
+    # On error, fallback to exiting with non-zero
+    sys.stderr.write(str(e))
+    sys.exit(1)
+PY

@@ -8,7 +8,7 @@
     "task-master-mcp": "./index.js"
   },
   "scripts": {
-    "start": "node index.js",
+    "start": "PATH=./bin:$PATH node index.js",
     "dev": "node --watch index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

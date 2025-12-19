@@ -14,6 +14,7 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
+  InitializeRequestSchema,
   ListResourcesRequestSchema,
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
@@ -35,7 +36,8 @@ const PROJECT_NUMBER = process.env.GH_PROJECT_NUMBER || "1";
 async function execCommand(command) {
   try {
     const { stdout, stderr } = await execAsync(command);
-    if (stderr && !stdout) {
+    // Don't throw on stderr if it contains informational messages
+    if (stderr && !stdout && !stderr.includes("Switched to") && !stderr.includes("Created branch")) {
       throw new Error(stderr);
     }
     return stdout.trim();
@@ -140,6 +142,23 @@ class TaskMasterServer {
   }
 
   setupHandlers() {
+    // Handle initialize
+    this.server.setRequestHandler(InitializeRequestSchema, async (request) => {
+      return {
+        protocolVersion: "2024-11-05",
+        capabilities: {
+          tools: {
+            listChanged: true,
+          },
+          resources: {},
+        },
+        serverInfo: {
+          name: "task-master",
+          version: "2.0.0",
+        },
+      };
+    });
+
     // List available resources
     this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
       const contexts = await listContexts();
@@ -534,33 +553,51 @@ class TaskMasterServer {
   // Tool implementations
 
   async analyzeIssue(issueId) {
-    const output = await execCommand(`gh-task-analyze ${issueId}`);
+    // Get issue details
+    const issue = await ghCommand(`issue view ${issueId} --json title,body,labels`);
     
-    // Parse analysis output
+    // Analyze completeness
+    const title = issue.title || "";
+    const body = issue.body || "";
+    const labels = issue.labels || [];
+    
     const analysis = {
       issue_id: issueId,
-      completeness: output.includes("✓ Title is descriptive"),
-      has_acceptance_criteria: output.includes("✓ Acceptance criteria"),
-      has_labels: output.includes("✓ Labels applied"),
+      completeness: {
+        title_descriptive: title.length > 10 && title.includes(" "),
+        has_description: body.length > 50,
+        has_acceptance_criteria: body.toLowerCase().includes("acceptance criteria") || body.includes("AC:") || body.includes("✅"),
+        has_labels: labels.length > 0,
+        has_assignee: issue.assignees && issue.assignees.length > 0,
+      },
       similar_tasks: [],
       documentation_found: [],
       confidence: "HIGH",
       recommendations: [],
     };
-
-    // Extract similar tasks
-    const similarMatch = output.match(/#(\d+):/g);
-    if (similarMatch) {
-      analysis.similar_tasks = similarMatch.map((m) => parseInt(m.replace(/[#:]/g, "")));
-    }
-
-    // Determine confidence
-    if (output.includes("Confidence: MEDIUM")) {
-      analysis.confidence = "MEDIUM";
-    } else if (output.includes("Confidence: LOW")) {
+    
+    // Determine confidence based on completeness
+    const completeCount = Object.values(analysis.completeness).filter(Boolean).length;
+    if (completeCount < 3) {
       analysis.confidence = "LOW";
+    } else if (completeCount < 5) {
+      analysis.confidence = "MEDIUM";
     }
-
+    
+    // Add recommendations
+    if (!analysis.completeness.title_descriptive) {
+      analysis.recommendations.push("Make title more descriptive (aim for 10+ words)");
+    }
+    if (!analysis.completeness.has_description) {
+      analysis.recommendations.push("Add detailed description explaining the requirements");
+    }
+    if (!analysis.completeness.has_acceptance_criteria) {
+      analysis.recommendations.push("Include acceptance criteria or success metrics");
+    }
+    if (!analysis.completeness.has_labels) {
+      analysis.recommendations.push("Apply relevant labels (enhancement, bug, documentation, etc.)");
+    }
+    
     return {
       content: [
         {
@@ -572,14 +609,69 @@ class TaskMasterServer {
   }
 
   async startTask(issueId) {
-    await execCommand(`gh-task-start ${issueId}`);
-    const context = await readContext(issueId);
-
+    // Get issue details
+    const issue = await ghCommand(`issue view ${issueId} --json title,number`);
+    
+    // Create branch name
+    const branchName = `task-${issueId}-${issue.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 50)}`;
+    
+    // Check if branch exists
+    let branchExists = false;
+    try {
+      await execCommand(`git show-ref --verify --quiet refs/heads/${branchName}`);
+      branchExists = true;
+    } catch {
+      // Branch doesn't exist
+    }
+    
+    // Create or switch to branch
+    if (branchExists) {
+      await execCommand(`git checkout ${branchName}`);
+    } else {
+      await execCommand(`git checkout -b ${branchName}`);
+    }
+    
+    // Initialize context
+    const context = {
+      issue_id: issueId,
+      started_at: new Date().toISOString(),
+      last_updated: new Date().toISOString(),
+      status: "in_progress",
+      branch: branchName,
+      requirements: {
+        primary: issue.title,
+        acceptance_criteria: []
+      },
+      technical_context: {
+        root_cause: "",
+        affected_files: [],
+        dependencies: []
+      },
+      progress: {
+        completed_steps: [],
+        current_step: "Analysis",
+        blockers: [],
+        confidence: 0.8
+      },
+      testing: {
+        test_cases: [],
+        coverage_target: 0.8,
+        performance_requirements: []
+      },
+      documentation: {
+        api_docs: [],
+        user_docs: [],
+        architecture_decisions: []
+      }
+    };
+    
+    await writeContext(issueId, context);
+    
     return {
       content: [
         {
           type: "text",
-          text: `Task started successfully!\n\nBranch: ${context.branch}\nStatus: ${context.status}\nContext: .task-context/${issueId}.json`,
+          text: `Task started successfully!\n\nBranch: ${branchName}\nStatus: in_progress\nContext: .task-context/${issueId}.json`,
         },
       ],
     };
