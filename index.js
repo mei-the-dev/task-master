@@ -694,6 +694,14 @@ class TaskMasterServer {
 
     await writeContext(issueId, context);
 
+    // Automatically run CLI context init for compatibility
+    try {
+      await execCommand(`source ./gh_cli_aliases\\ \(1\\).sh && gh-task-context-init ${issueId}`);
+    } catch (e) {
+      // Log but do not fail task if init fails
+      console.error(`[MCP] Warning: CLI context init failed for issue #${issueId}:`, e.message);
+    }
+
     return {
       content: [
         {
